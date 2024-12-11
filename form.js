@@ -134,7 +134,7 @@ function validateForm(event) {
 // Fetch form configuration from API and render it
 async function fetchAndRenderForm() {
   try {
-    const response = await fetch('http://localhost:3008/form');
+    const response = await fetch('http://192.168.0.136:3008/form');
     if (!response.ok) throw new Error('Failed to fetch form data');
     const formConfig = await response.json();
 
