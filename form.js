@@ -19,6 +19,31 @@ const formCSS = (primary, secondary) =>{
       margin-bottom: 20px;
     }
 
+    .hidden{
+      display: none !important; 
+    }
+
+     button {
+      display: block;
+      max-width:200px;
+      width:200px;
+      background: ${secondary};
+      color: white;
+      border: none;
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-weight: 600;
+      margin: -1px;
+      text-transform: uppercase;
+    }
+
+    button:hover {
+      background: ${primary};
+    }
+
     .tab-btn {
       cursor: pointer;
       float: left;
@@ -121,27 +146,6 @@ const formCSS = (primary, secondary) =>{
       overflow: hidden;
     }
 
-    button {
-      display: block;
-      max-width:200px;
-      width:200px;
-      background: ${secondary};
-      color: white;
-      border: none;
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;
-      font-size: 20px;
-      cursor: pointer;
-      transition: background 0.3s;
-      font-weight: 600;
-      margin: -1px;
-      text-transform: uppercase;
-    }
-
-    button:hover {
-      background: ${primary};
-    }
-
     .input-error {
       border-color: #ff4d4d;
     }
@@ -151,10 +155,6 @@ const formCSS = (primary, secondary) =>{
       font-size: 12px;
       margin-top: 5px;
       }
-      
-    .hidden{
-      display: none; 
-    }
   }
 `;
 }
@@ -213,27 +213,42 @@ function createForm(formConfig, targetElement) {
   
   if (tabs.length > 0) {
 
+
+    const formGroup = document.createElement('div');
+    formGroup.className = `form-group service hidden`;
+    
     tabs.filter(tab => tab.trim() !== '').forEach((tab, index) => {
       const Tab = document.createElement('span');
       Tab.className = index === 0 ? 'tab-btn active' : 'tab-btn';
       Tab.textContent = tab;
 
+      const input = document.createElement('input');
+      input.setAttribute('type', 'radio');
+      input.setAttribute('name', 'service');
+      input.setAttribute('value', tab);
+      input.required = false;
+
+      input.checked = index === 0 ? true : false;
+
+      formGroup.appendChild(input);
+
       Tab.addEventListener('click', () => {
         // Remove 'active' class from all tabs
         Array.from(TabGroup.children).forEach(otherTab => {
           otherTab.classList.remove('active');
+          input.checked = false;
         });
 
         Array.from(form.children).forEach(formGroup => {
-          if(formGroup.classList.contains("domainName")||(formGroup.classList.contains("dropDate") && !tab.includes('Outstation')) ) formGroup.classList.add('hidden');
+          if(formGroup.classList.contains("service") ||formGroup.classList.contains("domainName")||(formGroup.classList.contains("dropDate") && !tab.includes('Outstation')) ) formGroup.classList.add('hidden');
           else formGroup.classList.remove('hidden');
         });
-
+        input.checked = true;
         // Add 'active' class to the clicked tab
         Tab.classList.add('active');
-      });
-
+    });
       TabGroup.appendChild(Tab);
+      form.appendChild(formGroup);
     });
   }
 
@@ -291,11 +306,11 @@ function validateForm(event) {
     const AllInputs = form.querySelectorAll('input, textarea');
     AllInputs.forEach(input => {
       console.log("input.name",input.name)
-      if(input.name!='domainName') value.push(`${input.name}=${input.value.trim()}`)
-      else domainName = input.value.trim()
+      if((input.name!='domainName' && input.name!='service' )|| (input.name=='service' && input.checked)) value.push(`${input.name}=${input.value.trim()}`)
+      else  if( input.name=='domainName') domainName = input.value.trim()
     })
     alert('Form submitted successfully!');
-    window.location.href=`https://${String(domainName).toLowerCase()}.localhost:3000?${value.join('&')}`
+    window.location.href=`http://${String(domainName).toLowerCase()}.localhost:3000?${value.join('&')}`
     // window.location.href=`https://${String(domainName).toLowerCase()}.taxiengine360.tools.thefusionapps.com?${value.join('&')}`
     // form.reset();
   }
@@ -304,9 +319,9 @@ function validateForm(event) {
 // Fetch form configuration from API and render it
 async function fetchAndRenderForm() {
   try {
-    const response = await fetch('http://192.168.0.134:3008/form');
+    const response = await fetch('http://localhost:3008/form');
     // const response = await fetch('https://taxi.tools.thefusionapps.com/form');
-    if (!response.ok) throw new Error('Failed to fetch form data');
+    if (!response.ok) throw new Error(`Failed to fetch form data: ${response.statusText}`);
     const formConfig = await response.json();
 
     const targetElement = document.getElementById('trs-form');
